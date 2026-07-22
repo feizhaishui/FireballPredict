@@ -30,7 +30,7 @@ import org.lwjgl.input.Keyboard;
 
 import java.util.List;
 
-@Mod(modid = FireballPredict.MODID, version = FireballPredict.VERSION)
+@Mod(modid = FireballPredict.MODID, version = FireballPredict.VERSION, guiFactory = "com.naix.predict.ConfigGuiFactory")
 public class FireballPredict
 {
     public static final String MODID = "fireball_predict";
@@ -43,6 +43,8 @@ public class FireballPredict
     public static Vec3 currentFireballOrigin = null;  // 火球发射位置
     public static int currentColor = 0x00FF00;
     public static double currentETA = -1;
+    // 全局配置引用（用于 in-game Config GUI）
+    public static Configuration config = null;
 
     // 火球距离预测撞击点越近，警告颜色越偏红；越远则越偏绿。
     private static final double NEAR_DISTANCE = 8.0D;
@@ -58,6 +60,7 @@ public class FireballPredict
     public static double RENDER_CULL_DIST = 40.0D; // 视角剔除阈值（米），在渲染端平方使用
 
     private KeyBinding keyToggle;
+    private KeyBinding keyConfig;
     private int tickCounter = 0;
     private int warningCounter = 0;
     public static double WARN_RANGE = 2.5D;  // 5×5×5 范围
@@ -72,7 +75,9 @@ public class FireballPredict
     @EventHandler
     public void preInit(FMLPreInitializationEvent event)
     {
-        // 读取配置文件（在 preInit 阶段）        Configuration cfg = new Configuration(event.getSuggestedConfigurationFile());        try {            cfg.load();            UPDATE_TICK_INTERVAL = cfg.getInt("updateTickInterval", "general", UPDATE_TICK_INTERVAL, 1, 40, "每 N 个客户端 tick 更新一次预测（降低 CPU）");            SCAN_RANGE = (double) cfg.getFloat("scanRange", "general", (float) SCAN_RANGE, 8.0F, 512.0F, "仅在玩家周围该范围内扫描火球");            MAX_RAY_DISTANCE = (double) cfg.getFloat("maxRayDistance", "general", (float) MAX_RAY_DISTANCE, 32.0F, 1024.0F, "射线最远检测距离（米）");            RENDER_CULL_DIST = (double) cfg.getFloat("renderCullDistance", "general", (float) RENDER_CULL_DIST, 8.0F, 256.0F, "若预测点远且位于玩家背面则跳过重渲染的距离阈值（米）");            MIN_SPEED_SQ = (double) cfg.getFloat("minSpeedSq", "general", (float) MIN_SPEED_SQ, 0.0F, 1.0F, "忽略速度平方低于该值的火球");            WARN_RANGE = (double) cfg.getFloat("warnRange", "general", (float) WARN_RANGE, 0.5F, 8.0F, "触发警告的半径（米）");            ALERT_MODE = cfg.getInt("alertMode", "alerts", ALERT_MODE, 0, 2, "警告方式：0=HUD,1=Chat,2=Sound");            HUD_STYLE = cfg.getInt("hudStyle", "alerts", HUD_STYLE, 0, 2, "HUD 风格：0=文本,1=图标+文本,2=渐变方块+文本");
+        // 读取配置文件（在 preInit 阶段）        Configuration cfg = new Configuration(event.getSuggestedConfigurationFile());
+        // 暴露配置引用供游戏内 Config GUI 使用
+        FireballPredict.config = cfg;        try {            cfg.load();            UPDATE_TICK_INTERVAL = cfg.getInt("updateTickInterval", "general", UPDATE_TICK_INTERVAL, 1, 40, "每 N 个客户端 tick 更新一次预测（降低 CPU）");            SCAN_RANGE = (double) cfg.getFloat("scanRange", "general", (float) SCAN_RANGE, 8.0F, 512.0F, "仅在玩家周围该范围内扫描火球");            MAX_RAY_DISTANCE = (double) cfg.getFloat("maxRayDistance", "general", (float) MAX_RAY_DISTANCE, 32.0F, 1024.0F, "射线最远检测距离（米）");            RENDER_CULL_DIST = (double) cfg.getFloat("renderCullDistance", "general", (float) RENDER_CULL_DIST, 8.0F, 256.0F, "若预测点远且位于玩家背面则跳过重渲染的距离阈值（米）");            MIN_SPEED_SQ = (double) cfg.getFloat("minSpeedSq", "general", (float) MIN_SPEED_SQ, 0.0F, 1.0F, "忽略速度平方低于该值的火球");            WARN_RANGE = (double) cfg.getFloat("warnRange", "general", (float) WARN_RANGE, 0.5F, 8.0F, "触发警告的半径（米）");            ALERT_MODE = cfg.getInt("alertMode", "alerts", ALERT_MODE, 0, 2, "警告方式：0=HUD,1=Chat,2=Sound");            HUD_STYLE = cfg.getInt("hudStyle", "alerts", HUD_STYLE, 0, 2, "HUD 风格：0=文本,1=图标+文本,2=渐变方块+文本");
             ALERT_SOUND = cfg.getString("alertSound", "alerts", ALERT_SOUND, "警告音效名称（如 random.pop）");
             ALERT_SOUND_VOL = cfg.getFloat("alertSoundVol", "alerts", ALERT_SOUND_VOL, 0.0f, 4.0f, "警告音量");
             ALERT_SOUND_PITCH = cfg.getFloat("alertSoundPitch", "alerts", ALERT_SOUND_PITCH, 0.1f, 4.0f, "警告音高");
@@ -80,7 +85,14 @@ public class FireballPredict
             "key.naix_test.fireball",     // 描述
             Keyboard.KEY_R,                // R 键
             "key.categories.naix_test"     // 类别
-        );        ClientRegistry.registerKeyBinding(keyToggle);        // 注册事件        FMLCommonHandler.instance().bus().register(this);        net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(new PredictionRenderer());    }
+        );        ClientRegistry.registerKeyBinding(keyToggle);
+        // O 键：打开配置 GUI（游戏内可用）
+        keyConfig = new KeyBinding(
+            "key.naix_test.fireball.config",
+            Keyboard.KEY_O,
+            "key.categories.naix_test"
+        );
+        ClientRegistry.registerKeyBinding(keyConfig);        // 注册事件        FMLCommonHandler.instance().bus().register(this);        net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(new PredictionRenderer());    }
 
     /**
      * 处理客户端按键事件，默认按下 R 键时切换预测显示。
@@ -99,6 +111,26 @@ public class FireballPredict
                 );
             }
         }
+
+                if (keyConfig.isPressed()) {
+                    // 打开配置 GUI，使用之前保存的 Configuration 实例
+                    Minecraft mc = Minecraft.getMinecraft();
+                    if (mc != null) {
+                        Configuration cfg = FireballPredict.config;
+                        if (cfg != null) {
+                            java.util.List<net.minecraftforge.fml.client.config.IConfigElement> list = new net.minecraftforge.common.config.ConfigElement(cfg.getCategory(Configuration.CATEGORY_GENERAL)).getChildElements();
+                            mc.displayGuiScreen(new net.minecraftforge.fml.client.config.GuiConfig(null, list, FireballPredict.MODID, false, false, "Fireball Predict Configuration"));
+                        } else {
+                            mc.displayGuiScreen(new net.minecraft.client.gui.GuiScreen() {
+                                @Override
+                                public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+                                    this.drawDefaultBackground();
+                                    mc.fontRendererObj.drawString("Configuration not loaded.", 10, 10, 0xFFFFFF);
+                                }
+                            });
+                        }
+                    }
+                }
     }
 
     /**
