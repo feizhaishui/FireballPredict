@@ -46,6 +46,28 @@ public class FireballPredict
     // 全局配置引用（用于 in-game Config GUI）
     public static Configuration config = null;
 
+        /**
+         * Apply configuration values into runtime static fields. Call after loading/saving config.
+         */
+        public static void applyConfig(Configuration cfg) {
+            if (cfg == null) return;
+            // General
+            UPDATE_TICK_INTERVAL = cfg.getInt("updateTickInterval", "general", UPDATE_TICK_INTERVAL, 1, 40, "每 N 个客户端 tick 更新一次预测（降低 CPU）");
+            SCAN_RANGE = (double) cfg.getFloat("scanRange", "general", (float) SCAN_RANGE, 8.0F, 512.0F, "仅在玩家周围该范围内扫描火球");
+            MAX_RAY_DISTANCE = (double) cfg.getFloat("maxRayDistance", "general", (float) MAX_RAY_DISTANCE, 32.0F, 1024.0F, "射线最远检测距离（米）");
+            RENDER_CULL_DIST = (double) cfg.getFloat("renderCullDistance", "general", (float) RENDER_CULL_DIST, 8.0F, 256.0F, "若预测点远且位于玩家背面则跳过重渲染的距离阈值（米）");
+            MIN_SPEED_SQ = (double) cfg.getFloat("minSpeedSq", "general", (float) MIN_SPEED_SQ, 0.0F, 1.0F, "忽略速度平方低于该值的火球");
+            WARN_RANGE = (double) cfg.getFloat("warnRange", "general", (float) WARN_RANGE, 0.5F, 8.0F, "触发警告的半径（米）");
+
+            // Alerts
+            ALERT_MODE = cfg.getInt("alertMode", "alerts", ALERT_MODE, 0, 2, "警告方式：0=HUD,1=Chat,2=Sound");
+            HUD_STYLE = cfg.getInt("hudStyle", "alerts", HUD_STYLE, 0, 2, "HUD 风格：0=文本,1=图标+文本,2=渐变方块+文本");
+            ALERT_SOUND = cfg.getString("alertSound", "alerts", ALERT_SOUND, "警告音效名称（如 random.pop）");
+            ALERT_SOUND_VOL = cfg.getFloat("alertSoundVol", "alerts", ALERT_SOUND_VOL, 0.0f, 4.0f, "警告音量");
+            ALERT_SOUND_PITCH = cfg.getFloat("alertSoundPitch", "alerts", ALERT_SOUND_PITCH, 0.1f, 4.0f, "警告音高");
+            HUD_DISPLAY_TICKS = cfg.getInt("hudDisplayTicks", "alerts", HUD_DISPLAY_TICKS, 2, 200, "HUD 提示显示时长（以 tick 为单位，20 tick = 1s)");
+        }
+
     // 火球距离预测撞击点越近，警告颜色越偏红；越远则越偏绿。
     private static final double NEAR_DISTANCE = 8.0D;
     private static final double MEDIUM_DISTANCE = 24.0D;
@@ -77,7 +99,8 @@ public class FireballPredict
     {
         // 读取配置文件（在 preInit 阶段）        Configuration cfg = new Configuration(event.getSuggestedConfigurationFile());
         // 暴露配置引用供游戏内 Config GUI 使用
-        FireballPredict.config = cfg;        try {            cfg.load();            UPDATE_TICK_INTERVAL = cfg.getInt("updateTickInterval", "general", UPDATE_TICK_INTERVAL, 1, 40, "每 N 个客户端 tick 更新一次预测（降低 CPU）");            SCAN_RANGE = (double) cfg.getFloat("scanRange", "general", (float) SCAN_RANGE, 8.0F, 512.0F, "仅在玩家周围该范围内扫描火球");            MAX_RAY_DISTANCE = (double) cfg.getFloat("maxRayDistance", "general", (float) MAX_RAY_DISTANCE, 32.0F, 1024.0F, "射线最远检测距离（米）");            RENDER_CULL_DIST = (double) cfg.getFloat("renderCullDistance", "general", (float) RENDER_CULL_DIST, 8.0F, 256.0F, "若预测点远且位于玩家背面则跳过重渲染的距离阈值（米）");            MIN_SPEED_SQ = (double) cfg.getFloat("minSpeedSq", "general", (float) MIN_SPEED_SQ, 0.0F, 1.0F, "忽略速度平方低于该值的火球");            WARN_RANGE = (double) cfg.getFloat("warnRange", "general", (float) WARN_RANGE, 0.5F, 8.0F, "触发警告的半径（米）");            ALERT_MODE = cfg.getInt("alertMode", "alerts", ALERT_MODE, 0, 2, "警告方式：0=HUD,1=Chat,2=Sound");            HUD_STYLE = cfg.getInt("hudStyle", "alerts", HUD_STYLE, 0, 2, "HUD 风格：0=文本,1=图标+文本,2=渐变方块+文本");
+        FireballPredict.config = cfg;        try {            cfg.load();
+            applyConfig(cfg);            UPDATE_TICK_INTERVAL = cfg.getInt("updateTickInterval", "general", UPDATE_TICK_INTERVAL, 1, 40, "每 N 个客户端 tick 更新一次预测（降低 CPU）");            SCAN_RANGE = (double) cfg.getFloat("scanRange", "general", (float) SCAN_RANGE, 8.0F, 512.0F, "仅在玩家周围该范围内扫描火球");            MAX_RAY_DISTANCE = (double) cfg.getFloat("maxRayDistance", "general", (float) MAX_RAY_DISTANCE, 32.0F, 1024.0F, "射线最远检测距离（米）");            RENDER_CULL_DIST = (double) cfg.getFloat("renderCullDistance", "general", (float) RENDER_CULL_DIST, 8.0F, 256.0F, "若预测点远且位于玩家背面则跳过重渲染的距离阈值（米）");            MIN_SPEED_SQ = (double) cfg.getFloat("minSpeedSq", "general", (float) MIN_SPEED_SQ, 0.0F, 1.0F, "忽略速度平方低于该值的火球");            WARN_RANGE = (double) cfg.getFloat("warnRange", "general", (float) WARN_RANGE, 0.5F, 8.0F, "触发警告的半径（米）");            ALERT_MODE = cfg.getInt("alertMode", "alerts", ALERT_MODE, 0, 2, "警告方式：0=HUD,1=Chat,2=Sound");            HUD_STYLE = cfg.getInt("hudStyle", "alerts", HUD_STYLE, 0, 2, "HUD 风格：0=文本,1=图标+文本,2=渐变方块+文本");
             ALERT_SOUND = cfg.getString("alertSound", "alerts", ALERT_SOUND, "警告音效名称（如 random.pop）");
             ALERT_SOUND_VOL = cfg.getFloat("alertSoundVol", "alerts", ALERT_SOUND_VOL, 0.0f, 4.0f, "警告音量");
             ALERT_SOUND_PITCH = cfg.getFloat("alertSoundPitch", "alerts", ALERT_SOUND_PITCH, 0.1f, 4.0f, "警告音高");
