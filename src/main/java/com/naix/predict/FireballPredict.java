@@ -67,7 +67,14 @@ public class FireballPredict
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(new PredictionRenderer());
     }
 
+<<<<<<< Updated upstream
     // === R 键开关 ===
+=======
+    /**
+     * 处理客户端按键事件，默认按下 R 键时切换预测显示。
+     * Handle client key input events and toggle prediction display when R is pressed.
+     */
+>>>>>>> Stashed changes
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void onKeyInput(InputEvent.KeyInputEvent event)
@@ -83,7 +90,14 @@ public class FireballPredict
         }
     }
 
+<<<<<<< Updated upstream
     // === 每帧预测 ===
+=======
+    /**
+     * 每帧检查客户端世界，寻找最近的火球或手持火焰弹并计算预测落点。
+     * Each client tick checks the world for the nearest fireball or a held fire charge and computes the predicted impact point.
+     */
+>>>>>>> Stashed changes
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event)
@@ -175,7 +189,7 @@ public class FireballPredict
             currentETA = -1;
         }
 
-        // 模式 2：玩家手持烈焰弹。保留原有预测，颜色固定为黄色。
+        // 模式 2：玩家手持火焰弹。保留原有预测，颜色固定为黄色。
         if (newHit == null) {
             for (EntityPlayer p : world.playerEntities) {
                 if (p.getHeldItem() == null || p.getHeldItem().getItem() != Items.fire_charge)
@@ -198,7 +212,7 @@ public class FireballPredict
         currentColor = newHit == null ? 0 : color;
 
         // 玩家在落点 5×5×5 范围内时，聊天栏红字警告（每秒 2 次）
-        // 仅在火球模式（模式 1）下触发，手持烈焰弹不提示
+        // 仅在火球模式（模式 1）下触发，手持火焰弹不提示
         if (newHit != null && color != 0xFFFF00) {
             double dx = Math.abs(mc.thePlayer.posX - (newHit.getX() + 0.5));
             double dy = Math.abs(mc.thePlayer.posY - (newHit.getY() + 0.5));
