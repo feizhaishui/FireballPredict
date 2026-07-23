@@ -45,13 +45,19 @@ public class ConfigGuiFactory implements IModGuiFactory {
         private static final int BTN_RESTORE_DEFAULTS = 900;
         private static final int BTN_CHOOSE_SOUND = 901;
 
-        public ModsConfigGui() {
-            super(null,
+        // Constructor used when Forge instantiates via mainConfigGuiClass(GuiScreen parent)
+        public ModsConfigGui(net.minecraft.client.gui.GuiScreen parent) {
+            super(parent,
                 buildList(),
                 FireballPredict.MODID,
                 false,
                 false,
                 "Fireball Predict Configuration");
+        }
+
+        // No-arg constructor kept for safety; delegates to parent=null
+        public ModsConfigGui() {
+            this(null);
         }
 
         private static java.util.List<net.minecraftforge.fml.client.config.IConfigElement> buildList() {
@@ -75,12 +81,14 @@ public class ConfigGuiFactory implements IModGuiFactory {
         public void initGui() {
             super.initGui();
             // Add Restore Defaults and Choose Sound buttons at bottom left
-            int btnWidth = 150;
+            int btnWidth = 160;
             int btnHeight = 20;
-            int x = 10;
-            int y = this.height - 30;
-            this.buttonList.add(new net.minecraft.client.gui.GuiButton(BTN_RESTORE_DEFAULTS, x, y, btnWidth, btnHeight, "Restore Defaults"));
-            this.buttonList.add(new net.minecraft.client.gui.GuiButton(BTN_CHOOSE_SOUND, x + btnWidth + 4, y, btnWidth, btnHeight, "Choose Alert Sound"));
+            int padding = 6;
+            int totalWidth = btnWidth * 2 + padding;
+            int x = Math.max(10, (this.width - totalWidth) / 2);
+            int y = this.height - 28;
+            this.buttonList.add(new net.minecraft.client.gui.GuiButton(BTN_RESTORE_DEFAULTS, x, y, btnWidth, btnHeight, "恢复默认值"));
+            this.buttonList.add(new net.minecraft.client.gui.GuiButton(BTN_CHOOSE_SOUND, x + btnWidth + padding, y, btnWidth, btnHeight, "选择警告音"));
         }
 
         @Override
@@ -102,9 +110,9 @@ public class ConfigGuiFactory implements IModGuiFactory {
                     }
                     cfg.save();
                     FireballPredict.applyConfig(cfg);
-                    net.minecraft.client.Minecraft.getMinecraft().thePlayer.addChatMessage(new net.minecraft.util.ChatComponentText("[FireballPredict] Defaults restored."));
+                    net.minecraft.client.Minecraft.getMinecraft().thePlayer.addChatMessage(new net.minecraft.util.ChatComponentText("[FireballPredict] 已恢复默认值。"));
                     // Rebuild GUI to reflect defaults
-                    mc.displayGuiScreen(new ModsConfigGui());
+                    mc.displayGuiScreen(new ModsConfigGui(this));
                 }
             } else if (button.id == BTN_CHOOSE_SOUND) {
                 mc.displayGuiScreen(new SoundSelectGui(this));
@@ -146,7 +154,7 @@ public class ConfigGuiFactory implements IModGuiFactory {
                 this.buttonList.add(new net.minecraft.client.gui.GuiButton(id++, this.width / 2 - 100, y, 200, 20, s));
                 y += 24;
             }
-            this.buttonList.add(new net.minecraft.client.gui.GuiButton(2100, this.width / 2 - 100, y + 8, 200, 20, "Cancel"));
+            this.buttonList.add(new net.minecraft.client.gui.GuiButton(2100, this.width / 2 - 100, y + 8, 200, 20, "取消"));
         }
 
         @Override
@@ -165,7 +173,7 @@ public class ConfigGuiFactory implements IModGuiFactory {
                         p.set(picked);
                         cfg.save();
                         FireballPredict.applyConfig(cfg);
-                        net.minecraft.client.Minecraft.getMinecraft().thePlayer.addChatMessage(new net.minecraft.util.ChatComponentText("[FireballPredict] Alert sound set to " + picked));
+                        net.minecraft.client.Minecraft.getMinecraft().thePlayer.addChatMessage(new net.minecraft.util.ChatComponentText("[FireballPredict] 已将警告音设为 " + picked));
                     }
                 }
                 mc.displayGuiScreen(parent);
@@ -175,7 +183,7 @@ public class ConfigGuiFactory implements IModGuiFactory {
         @Override
         public void drawScreen(int mouseX, int mouseY, float partialTicks) {
             this.drawDefaultBackground();
-            drawCenteredString(this.fontRendererObj, "Select Alert Sound", this.width / 2, 12, 0xFFFFFF);
+            drawCenteredString(this.fontRendererObj, "选择警告音", this.width / 2, 12, 0xFFFFFF);
             super.drawScreen(mouseX, mouseY, partialTicks);
         }
 
