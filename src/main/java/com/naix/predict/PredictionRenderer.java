@@ -80,7 +80,11 @@ public class PredictionRenderer
                         if (!world.isAirBlock(bp)) {
                             net.minecraft.block.Block block = world.getBlockState(bp).getBlock();
                             fullCache[idx] = block.isFullCube();
-                            opaqueCache[idx] = block.isOpaqueCube();
+                            // 树叶/玻璃等方块 isFullCube() 为 true 但不是不透明方块，
+                            // 若只用 isOpaqueCube() 判断遮挡，树冠内部每个方块都会
+                            // 渲染成黄色盒子并产生大量多余面。完整方块视为遮挡，
+                            // 只绘制实体区域的外表面。
+                            opaqueCache[idx] = block.isOpaqueCube() || block.isFullCube();
                         }
                     }
                 }
