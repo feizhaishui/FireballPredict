@@ -1,6 +1,7 @@
 package com.naix.predict;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldRenderer;
@@ -24,6 +25,13 @@ import java.nio.IntBuffer;
 public class PredictionRenderer
 {
     private static final float ALPHA = 0.3f;
+
+    /**
+     * ETA 文字在 GUI 缩放坐标系下的字号倍数。
+     * 文字按原版 HUD 的方式在缩放分辨率空间绘制，会随 GUI 缩放因子变大，
+     * 因此在 2K/4K 等高分辨率下依然清晰可读。1.0 等于原版 HUD 文字大小。
+     */
+    private static final float ETA_SCALE = 1.25f;
 
     /**
      * 监听世界渲染事件并绘制预测效果。
@@ -217,10 +225,13 @@ public class PredictionRenderer
 
         // 渲染 ETA 文字
         if (etaOnScreen && FireballPredict.currentETA >= 0) {
+            ScaledResolution scaledRes = new ScaledResolution(mc);
+            int scaleFactor = scaledRes.getScaleFactor();
+
             GL11.glMatrixMode(GL11.GL_PROJECTION);
             GL11.glPushMatrix();
             GL11.glLoadIdentity();
-            GL11.glOrtho(0, mc.displayWidth, mc.displayHeight, 0, -1, 1);
+            GL11.glOrtho(0, scaledRes.getScaledWidth(), scaledRes.getScaledHeight(), 0, -1, 1);
             GL11.glMatrixMode(GL11.GL_MODELVIEW);
             GL11.glPushMatrix();
             GL11.glLoadIdentity();
@@ -231,12 +242,15 @@ public class PredictionRenderer
 
             String text = String.format("%.1fs", FireballPredict.currentETA);
             int halfW = mc.fontRendererObj.getStringWidth(text) / 2;
-            int textY = (int) (etaScreenY - 5);
-            float scale = 2.5f;
+
+            // 把投影得到的原生像素坐标转换为 GUI 缩放坐标，
+            // 使文字与 HUD 其他元素一样随分辨率/GUI 缩放同步变大。
+            float textX = etaScreenX / scaleFactor;
+            float textY = (etaScreenY - 5.0f) / scaleFactor;
 
             GlStateManager.pushMatrix();
-            GlStateManager.translate(etaScreenX, textY, 0);
-            GlStateManager.scale(scale, scale, 1.0f);
+            GlStateManager.translate(textX, textY, 0);
+            GlStateManager.scale(ETA_SCALE, ETA_SCALE, 1.0f);
             // 黑色描边：上下左右各偏移 1px
             mc.fontRendererObj.drawString(text, -halfW - 1, -1, 0x000000);
             mc.fontRendererObj.drawString(text, -halfW + 1, -1, 0x000000);
