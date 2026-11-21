@@ -155,7 +155,12 @@ rem  Java 8 (version string 1.8.x or 8.x); otherwise clears JDK.
 rem ============================================================
 :try_jdk
 set "JDK=%~1"
+rem ForgeGradle needs a full JDK (javac), not just a JRE.
 if not exist "%JDK%\bin\java.exe" (
+    set "JDK="
+    exit /b 1
+)
+if not exist "%JDK%\bin\javac.exe" (
     set "JDK="
     exit /b 1
 )

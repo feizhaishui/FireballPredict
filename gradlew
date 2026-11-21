@@ -9,8 +9,8 @@
 # Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
 DEFAULT_JVM_OPTS=""
 
-# Force JDK 8 for Minecraft Forge 1.8.9 compatibility
-JAVA_HOME="/d/Java/jdk8"
+# Minecraft Forge 1.8.9 needs JDK 8. Use JAVA_HOME from the environment
+# (or org.gradle.java.home in gradle.properties); do not hardcode a local path.
 
 APP_NAME="Gradle"
 APP_BASE_NAME=`basename "$0"`
